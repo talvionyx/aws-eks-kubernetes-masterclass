@@ -19,6 +19,7 @@ spec:
         image: stacksimplify/kube-notifications-microservice:1.0.0
         ports:
         - containerPort: 8096
+        imagePullPolicy: Always
         env:
           - name: AWS_MAIL_SERVER_HOST
             value: "smtp-service"
