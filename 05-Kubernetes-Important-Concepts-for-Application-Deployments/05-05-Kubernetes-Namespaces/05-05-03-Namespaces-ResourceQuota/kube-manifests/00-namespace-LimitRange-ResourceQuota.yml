@@ -32,6 +32,5 @@ spec:
     pods: "5"    
     configmaps: "5" 
     persistentvolumeclaims: "5" 
-    replicationcontrollers: "5" 
     secrets: "5" 
     services: "5"     
