@@ -2,7 +2,7 @@
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: eks-microservices-demo
+  name: eks-microservices-demo-canary
   labels:
     app: usermgmt-restapp
   annotations:
