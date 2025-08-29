@@ -1,70 +1,100 @@
-# EKS Storage with EBS - Elastic Block Store
+# Amazon EBS CSI Driver on EKS (with Pod Identity)
 
-## Step-01: Introduction
-- Create IAM Policy for EBS
-- Associate IAM Policy to Worker Node IAM Role
-- Install EBS CSI Driver
+## Step-00: What we’ll do
 
-## Step-02:  Create IAM policyy
-- Go to Services -> IAM
-- Create a Policy 
-  - Select JSON tab and copy paste the below JSON
+1. Install the **Amazon EBS CSI Driver** add-on (with IAM role via “Create recommended role”)
+2. Verify installation using `kubectl`
+
+---
+
+## Step-01: Install Amazon EBS CSI Driver
+
+1. Still on **Add-ons** → **Get more add-ons**
+2. Search for **Amazon EBS CSI driver (`aws-ebs-csi-driver`)**
+3. On the **Permissions** step, choose **Create recommended role**
+
+   * Console will create an IAM role with the managed policy:
+     **`AmazonEBSCSIDriverPolicy`**, and **`AmazonEKSClusterPolicy`**
+   * Trust is automatically set to **`pods.eks.amazonaws.com`**
+
 ```json
-
 {
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ec2:AttachVolume",
-        "ec2:CreateSnapshot",
-        "ec2:CreateTags",
-        "ec2:CreateVolume",
-        "ec2:DeleteSnapshot",
-        "ec2:DeleteTags",
-        "ec2:DeleteVolume",
-        "ec2:DescribeInstances",
-        "ec2:DescribeSnapshots",
-        "ec2:DescribeTags",
-        "ec2:DescribeVolumes",
-        "ec2:DetachVolume"
-      ],
-      "Resource": "*"
-    }
-  ]
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "pods.eks.amazonaws.com"
+            },
+            "Action": [
+                "sts:AssumeRole",
+                "sts:TagSession"
+            ]
+        }
+    ]
 }
 ```
-  - Review the same in **Visual Editor** 
-  - Click on **Review Policy**
-  - **Name:** Amazon_EBS_CSI_Driver
-  - **Description:** Policy for EC2 Instances to access Elastic Block Store
-  - Click on **Create Policy**
 
-## Step-03: Get the IAM role Worker Nodes using and Associate this policy to that role
-```
-# Get Worker node IAM Role ARN
-kubectl -n kube-system describe configmap aws-auth
+4. Click **Create**
 
-# from output check rolearn
-rolearn: arn:aws:iam::180789647333:role/eksctl-eksdemo1-nodegroup-eksdemo-NodeInstanceRole-IJN07ZKXAWNN
-```
-- Go to Services -> IAM -> Roles 
-- Search for role with name **eksctl-eksdemo1-nodegroup** and open it
-- Click on **Permissions** tab
-- Click on **Attach Policies**
-- Search for **Amazon_EBS_CSI_Driver** and click on **Attach Policy**
+> This deploys the **EBS CSI controller** Deployment and the **EBS CSI node DaemonSet**.
 
-## Step-04: Deploy Amazon EBS CSI Driver  
-- Verify kubectl version, it should be 1.14 or later
-```
-kubectl version --client --short
-```
-- Deploy Amazon EBS CSI Driver
-```
-# Deploy EBS CSI Driver
-kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=master"
+---
 
-# Verify ebs-csi pods running
+## Step-02: Verify installation
+
+```bash
+# List pods in kube-system
 kubectl get pods -n kube-system
 ```
+
+**Expected output (sample):**
+
+```bash
+NAME                                  READY   STATUS    RESTARTS   AGE
+aws-node-np6bt                        2/2     Running   0          2h
+coredns-6b9575c64c-bvlxh              1/1     Running   0          2h45m
+ebs-csi-controller-6c794c785d-27mcc   6/6     Running   0          15m
+ebs-csi-node-bf4nq                    3/3     Running   0          15m
+eks-pod-identity-agent-mkxmw          1/1     Running   0          42m
+kube-proxy-6svwq                      1/1     Running   0          2h
+metrics-server-75c7985757-c2cbf       1/1     Running   0          2h45m
+```
+
+```bash
+# DaemonSets
+kubectl get ds -n kube-system
+```
+
+**Expected output (sample):**
+
+```bash
+NAME                     DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR              AGE
+aws-node                 2         2         2       2            2           <none>                     2h45m
+ebs-csi-node             2         2         2       2            2           kubernetes.io/os=linux     15m
+eks-pod-identity-agent   2         2         2       2            2           <none>                     42m
+kube-proxy               2         2         2       2            2           <none>                     2h45m
+```
+
+```bash
+# Deployments
+kubectl get deploy -n kube-system
+```
+
+**Expected output (sample):**
+
+```bash
+NAME                 READY   UP-TO-DATE   AVAILABLE   AGE
+coredns              2/2     2            2           2h45m
+ebs-csi-controller   2/2     2            2           16m
+metrics-server       2/2     2            2           2h45m
+```
+
+---
+
+## Summary
+
+* Installed **Amazon EBS CSI Driver** add-on (with recommended IAM role)
+* Verified that the **EBS CSI controller pods** and **EBS CSI node DaemonSet** are running successfully in the cluster
+
+---
