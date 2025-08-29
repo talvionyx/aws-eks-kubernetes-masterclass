@@ -22,12 +22,13 @@ Amazon EKS Pod Identity enables pods in your cluster to securely assume IAM role
    - Injects environment variables such as `AWS_CONTAINER_CREDENTIALS_FULL_URI`.  
    - Mounts a projected service account token for use by the Pod Identity Agent.  
 
-   **Verify Mutation Example:**    
-   ```bash
-   kubectl exec -it aws-cli -- env | grep AWS_CONTAINER
-   AWS_CONTAINER_CREDENTIALS_FULL_URI=http://169.254.170.23/v1/credentials
-   AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE=/var/run/secrets/pods.eks.amazonaws.com/serviceaccount/eks-pod-identity-token
-  ````
+**Verify Mutation Example:**    
+```bash
+kubectl exec -it aws-cli -- env | grep AWS_CONTAINER
+AWS_CONTAINER_CREDENTIALS_FULL_URI=http://169.254.170.23/v1/credentials
+AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE=/var/run/secrets/pods.eks.amazonaws.com/serviceaccount/eks-pod-identity-token
+```
+
 
 4. **Pod Requests Credentials**
    Inside the pod, the AWS SDK/CLI uses the default credential provider chain.
@@ -45,6 +46,7 @@ Amazon EKS Pod Identity enables pods in your cluster to securely assume IAM role
 
 5. **Pod Accesses AWS Resources**
    The AWS SDK/CLI inside the pod now has valid, short-lived credentials and can call AWS services (e.g., list S3 buckets).
+   
 
 ---
 
